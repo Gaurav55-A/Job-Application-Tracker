@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Tracker</title>
+  <script src="scripts/script.js" defer></script> <!-- ✅ Correct path -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-900">
+  <div class="max-w-xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Job Application Tracker</h1>
+
+    <form id="jobForm" class="mb-6 space-y-4">
+      <input type="text" id="title" placeholder="Job Title" required class="w-full p-2 border rounded" />
+      <input type="text" id="company" placeholder="Company" required class="w-full p-2 border rounded" />
+      <select id="status" required class="w-full p-2 border rounded">
+        <option value="">Select Status</option>
+        <option value="Applied">Applied</option>
+        <option value="Interview">Interview</option>
+        <option value="Offered">Offered</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      <input type="date" id="date" class="w-full p-2 border rounded" />
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Add Job</button>
+    </form>
+
+    <ul id="jobList" class="space-y-4"></ul>
+  </div>
+</body>
+</html>

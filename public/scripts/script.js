@@ -1,91 +1,118 @@
-document.addEventListener("DOMContentLoaded", function () {
-  fetchJobs();
+// public/scripts/script.js
 
-  const form = document.querySelector("form");
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('jobForm');
+  const jobList = document.getElementById('jobList');
 
-    const job = {
-      title: document.getElementById("title").value,
-      company: document.getElementById("company").value,
-      status: document.getElementById("status").value,
-      created_at: document.getElementById("created_at").value,
-    };
-
-    await fetch("/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(job),
+  // ✅ Fetch and display jobs on load
+  fetch('/fetch')
+    .then(res => res.json())
+    .then(data => {
+      jobList.innerHTML = '';
+      data.forEach(addJobToDOM);
     });
 
-    form.reset();
-    fetchJobs();
+  // ✅ Handle form submission
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById('title').value;
+    const company = document.getElementById('company').value;
+    const status = document.getElementById('status').value;
+    const created_at = document.getElementById('created_at').value;
+
+    fetch('/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, company, status, created_at })
+    })
+      .then(res => {
+        if (res.ok) {
+          return fetch('/fetch');
+        } else {
+          throw new Error('Add job failed');
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        jobList.innerHTML = '';
+        data.forEach(addJobToDOM);
+        form.reset();
+      })
+      .catch(err => {
+        console.error('Error:', err);
+      });
   });
-});
 
-async function fetchJobs() {
-  const res = await fetch("/fetch");
-  const jobs = await res.json();
-
-  const jobList = document.getElementById("jobList");
-  jobList.innerHTML = "";
-
-  jobs.forEach((job) => {
-    const div = document.createElement("div");
-    div.className = "p-4 border rounded mb-2 bg-white dark:bg-gray-800 dark:text-white shadow";
-
-    div.innerHTML = `
-      <h3 class="font-bold text-lg">${job.title}</h3>
-      <p><strong>Company:</strong> ${job.company}</p>
-      <p><strong>Status:</strong> ${job.status}</p>
-      <p><strong>Date:</strong> ${job.created_at}</p>
-      <div class="mt-2">
-        <button onclick="deleteJob(${job.id})" class="bg-red-500 text-white px-3 py-1 rounded mr-2">Delete</button>
-        <button onclick='editJob(${JSON.stringify(job)})' class="bg-yellow-500 text-white px-3 py-1 rounded">Edit</button>
-      </div>
+  // ✅ DOM helper to display a job
+  function addJobToDOM(job) {
+    const li = document.createElement('li');
+    li.className = 'border p-4 rounded bg-white';
+    li.innerHTML = `
+      <div class="font-bold text-xl">${job.title}</div>
+      <div class="text-sm text-gray-600">${job.company}</div>
+      <div class="text-sm text-blue-600">${job.status}</div>
+      <div class="text-sm text-gray-400">${job.created_at}</div>
     `;
+    jobList.appendChild(li);
+  }
+});
+// public/scripts/script.js
 
-    jobList.appendChild(div);
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('jobForm');
+  const jobList = document.getElementById('jobList');
+
+  // ✅ Fetch and display jobs on load
+  fetch('/fetch')
+    .then(res => res.json())
+    .then(data => {
+      jobList.innerHTML = '';
+      data.forEach(addJobToDOM);
+    });
+
+  // ✅ Handle form submission
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById('title').value;
+    const company = document.getElementById('company').value;
+    const status = document.getElementById('status').value;
+    const created_at = document.getElementById('created_at').value;
+
+    fetch('/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, company, status, created_at })
+    })
+      .then(res => {
+        if (res.ok) {
+          return fetch('/fetch');
+        } else {
+          throw new Error('Add job failed');
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        jobList.innerHTML = '';
+        data.forEach(addJobToDOM);
+        form.reset();
+      })
+      .catch(err => {
+        console.error('Error:', err);
+      });
   });
-}
 
-async function deleteJob(id) {
-  await fetch("/delete", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
-  });
-  fetchJobs();
-}
-
-function editJob(job) {
-  document.getElementById("editId").value = job.id;
-  document.getElementById("editTitle").value = job.title;
-  document.getElementById("editCompany").value = job.company;
-  document.getElementById("editStatus").value = job.status;
-  document.getElementById("editDate").value = job.created_at;
-
-  document.getElementById("editForm").classList.remove("hidden");
-}
-
-document.getElementById("editForm").addEventListener("submit", async function (e) {
-  e.preventDefault();
-
-  const editedJob = {
-    id: document.getElementById("editId").value,
-    title: document.getElementById("editTitle").value,
-    company: document.getElementById("editCompany").value,
-    status: document.getElementById("editStatus").value,
-    created_at: document.getElementById("editDate").value,
-  };
-
-  await fetch("/edit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(editedJob),
-  });
-
-  document.getElementById("editForm").reset();
-  document.getElementById("editForm").classList.add("hidden");
-  fetchJobs();
+  // ✅ DOM helper to display a job
+  function addJobToDOM(job) {
+    const li = document.createElement('li');
+    li.className = 'border p-4 rounded bg-white';
+    li.innerHTML = `
+      <div class="font-bold text-xl">${job.title}</div>
+      <div class="text-sm text-gray-600">${job.company}</div>
+      <div class="text-sm text-blue-600">${job.status}</div>
+      <div class="text-sm text-gray-400">${job.created_at}</div>
+    `;
+    jobList.appendChild(li);
+  }
 });

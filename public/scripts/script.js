@@ -1,88 +1,91 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('jobForm');
-  const jobList = document.getElementById('jobList');
-  const submitBtn = document.getElementById('submitBtn');
+document.addEventListener("DOMContentLoaded", function () {
+  fetchJobs();
 
-  let editMode = false;
-  let editId = null;
-
-  function fetchJobs() {
-    fetch('/fetch')
-      .then(res => res.json())
-      .then(data => {
-        jobList.innerHTML = '';
-        data.forEach(job => {
-          const li = document.createElement('li');
-          li.className = 'border p-4 rounded shadow flex justify-between items-center';
-          li.innerHTML = `
-            <div>
-              <h3 class="font-bold text-lg">${job.title}</h3>
-              <p>${job.company} — <span class="italic">${job.status}</span></p>
-              <p class="text-sm text-gray-600">Applied on: ${job.created_at}</p>
-            </div>
-            <div class="flex gap-2">
-              <button data-id="${job.id}" class="edit-btn text-blue-500">Edit</button>
-              <button data-id="${job.id}" class="delete-btn text-red-500">Delete</button>
-            </div>
-          `;
-          jobList.appendChild(li);
-        });
-      });
-  }
-
-  form.addEventListener('submit', (e) => {
+  const form = document.querySelector("form");
+  form.addEventListener("submit", async function (e) {
     e.preventDefault();
-    const title = document.getElementById('title').value;
-    const company = document.getElementById('company').value;
-    const status = document.getElementById('status').value;
-    const created_at = document.getElementById('created_at').value;
 
-    const endpoint = editMode ? '/edit' : '/add';
-    const payload = editMode
-      ? { id: editId, title, company, status, created_at }
-      : { title, company, status, created_at };
+    const job = {
+      title: document.getElementById("title").value,
+      company: document.getElementById("company").value,
+      status: document.getElementById("status").value,
+      created_at: document.getElementById("created_at").value,
+    };
 
-    fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(() => {
-      form.reset();
-      editMode = false;
-      editId = null;
-      submitBtn.textContent = 'Add Job';
-      fetchJobs();
+    await fetch("/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(job),
     });
+
+    form.reset();
+    fetchJobs();
+  });
+});
+
+async function fetchJobs() {
+  const res = await fetch("/fetch");
+  const jobs = await res.json();
+
+  const jobList = document.getElementById("jobList");
+  jobList.innerHTML = "";
+
+  jobs.forEach((job) => {
+    const div = document.createElement("div");
+    div.className = "p-4 border rounded mb-2 bg-white dark:bg-gray-800 dark:text-white shadow";
+
+    div.innerHTML = `
+      <h3 class="font-bold text-lg">${job.title}</h3>
+      <p><strong>Company:</strong> ${job.company}</p>
+      <p><strong>Status:</strong> ${job.status}</p>
+      <p><strong>Date:</strong> ${job.created_at}</p>
+      <div class="mt-2">
+        <button onclick="deleteJob(${job.id})" class="bg-red-500 text-white px-3 py-1 rounded mr-2">Delete</button>
+        <button onclick='editJob(${JSON.stringify(job)})' class="bg-yellow-500 text-white px-3 py-1 rounded">Edit</button>
+      </div>
+    `;
+
+    jobList.appendChild(div);
+  });
+}
+
+async function deleteJob(id) {
+  await fetch("/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+  fetchJobs();
+}
+
+function editJob(job) {
+  document.getElementById("editId").value = job.id;
+  document.getElementById("editTitle").value = job.title;
+  document.getElementById("editCompany").value = job.company;
+  document.getElementById("editStatus").value = job.status;
+  document.getElementById("editDate").value = job.created_at;
+
+  document.getElementById("editForm").classList.remove("hidden");
+}
+
+document.getElementById("editForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const editedJob = {
+    id: document.getElementById("editId").value,
+    title: document.getElementById("editTitle").value,
+    company: document.getElementById("editCompany").value,
+    status: document.getElementById("editStatus").value,
+    created_at: document.getElementById("editDate").value,
+  };
+
+  await fetch("/edit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(editedJob),
   });
 
-  jobList.addEventListener('click', (e) => {
-    const id = e.target.getAttribute('data-id');
-
-    if (e.target.classList.contains('delete-btn')) {
-      fetch('/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      }).then(() => fetchJobs());
-    }
-
-    if (e.target.classList.contains('edit-btn')) {
-      fetch('/fetch')
-        .then(res => res.json())
-        .then(data => {
-          const job = data.find(j => j.id == id);
-          if (job) {
-            document.getElementById('title').value = job.title;
-            document.getElementById('company').value = job.company;
-            document.getElementById('status').value = job.status;
-            document.getElementById('created_at').value = job.created_at;
-            editMode = true;
-            editId = job.id;
-            submitBtn.textContent = 'Update Job';
-          }
-        });
-    }
-  });
-
+  document.getElementById("editForm").reset();
+  document.getElementById("editForm").classList.add("hidden");
   fetchJobs();
 });

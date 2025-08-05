@@ -1,73 +1,77 @@
+require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+const mysql = require('mysql2');
 const path = require('path');
-const db = require('./db');
+const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3002;
 
-// Middleware
-app.use(cors());
+const connection = mysql.createConnection({
+  host: process.env.MYSQLHOST || 'localhost',
+  user: process.env.MYSQLUSER || 'root',
+  password: process.env.MYSQLPASSWORD || '',
+  database: process.env.MYSQLDATABASE || 'jobtracker',
+  port: process.env.MYSQLPORT || 3306,
+  connectTimeout: 10000
+});
+
+connection.connect((err) => {
+  if (err) {
+    console.error('❌ DB connection failed:', err);
+  } else {
+    console.log('✅ Connected to MySQL!');
+  }
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// Serve static files (index.html, script.js, CSS, etc.)
-app.use(express.static('public'));
+// ✅ Add job
+app.post('/add', (req, res) => {
+  const { title, company, status, created_at } = req.body;
+  const sql = `INSERT INTO jobs (title, company, status, created_at)
+               VALUES (?, ?, ?, ?)`;
+  connection.query(sql, [title, company, status, created_at], (err) => {
+    if (err) return res.status(500).send(err);
+    res.sendStatus(200);
+  });
+});
 
-// === API Routes ===
-
-// Get all jobs
-app.get('/api/jobs', (req, res) => {
-  db.query('SELECT * FROM applications ORDER BY created_at DESC', (err, results) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
+// ✅ Fetch all jobs
+app.get('/fetch', (req, res) => {
+  connection.query('SELECT * FROM jobs ORDER BY created_at DESC', (err, results) => {
+    if (err) return res.status(500).send(err);
     res.json(results);
   });
 });
 
-// Add a new job
-app.post('/api/jobs', (req, res) => {
-  const { title, company, status, created_at } = req.body;
-  const date = created_at || new Date().toISOString().split('T')[0];
-  db.query(
-    'INSERT INTO applications (title, company, status, created_at) VALUES (?, ?, ?, ?)',
-    [title, company, status, date],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: 'Insert failed' });
-      res.json({ id: result.insertId, title, company, status, created_at: date });
-    }
-  );
-});
-
-// Delete a job
-app.delete('/api/jobs/:id', (req, res) => {
-  db.query('DELETE FROM applications WHERE id = ?', [req.params.id], (err) => {
-    if (err) return res.status(500).json({ error: 'Delete failed' });
-    res.json({ success: true });
+// ✅ Delete job
+app.post('/delete', (req, res) => {
+  const { id } = req.body;
+  const sql = 'DELETE FROM jobs WHERE id = ?';
+  connection.query(sql, [id], (err) => {
+    if (err) return res.status(500).send(err);
+    res.sendStatus(200);
   });
 });
 
-// Update a job
-app.put('/api/jobs/:id', (req, res) => {
-  const { title, company, status } = req.body;
-  db.query(
-    'UPDATE applications SET title = ?, company = ?, status = ? WHERE id = ?',
-    [title, company, status, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: 'Update failed' });
-      res.json({ success: true });
-    }
-  );
+// ✅ Edit job
+app.post('/edit', (req, res) => {
+  const { id, title, company, status, created_at } = req.body;
+  const sql = `UPDATE jobs SET title = ?, company = ?, status = ?, created_at = ? WHERE id = ?`;
+  connection.query(sql, [title, company, status, created_at, id], (err) => {
+    if (err) return res.status(500).send(err);
+    res.sendStatus(200);
+  });
 });
 
-// === Fallback route for frontend (excluding API routes) ===
+// Serve frontend
 app.get('*', (req, res) => {
-  if (req.originalUrl.startsWith('/api')) {
-    return res.status(404).json({ error: 'API route not found' });
-  }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// === Start Server ===
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });

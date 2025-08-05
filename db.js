@@ -1,11 +1,11 @@
 const mysql = require('mysql2');
 
 const db = mysql.createConnection({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'your-local-password',
-  database: process.env.DB_NAME || 'jobtracker',
-  port: process.env.DB_PORT || 3306
+  host: 'mysql.railway.internal', // ✅ FIXED: no equal sign!
+  user: 'root',
+  password: 'sTBSBkOldkAvSTcucMoVLFgVyVGTHTbB',
+  database: 'railway',
+  port: 3306
 });
 
 db.connect((err) => {

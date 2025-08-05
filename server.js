@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
 const db = require('./db');
 
 const app = express();
@@ -58,9 +59,12 @@ app.put('/api/jobs/:id', (req, res) => {
   );
 });
 
-// === Fallback route for frontend ===
+// === Fallback route for frontend (excluding API routes) ===
 app.get('*', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(404).json({ error: 'API route not found' });
+  }
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // === Start Server ===
